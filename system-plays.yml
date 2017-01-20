@@ -1,0 +1,51 @@
+---
+- hosts: localhost ansible_connection=local
+
+  tasks:
+    - name: "Update all packages to the latest version"
+      become: yes
+      tags:
+        - install
+      apt:
+        upgrade: dist
+
+    - name: "Install all packages and dependencies"
+      become: yes
+      tags:
+        - install
+      apt:
+        name:
+          - chromium
+          - curl
+          - libffi-dev
+          - libcanberra-gtk-module
+          - python
+          - python3
+          - python-pip
+          - python3-pip
+          - vim
+          - wget
+          - zsh
+        state: latest
+
+    - name: "Download Sublime Text 3"
+      tags:
+        - install
+      get_url:
+        url: https://download.sublimetext.com/sublime-text_build-3126_amd64.deb
+        dest: /tmp/sublime-text-3.deb
+
+    - name: "Install Sublime Text 3"
+      tags:
+        - install
+      become: yes
+      apt:
+        deb: /tmp/sublime-text-3.deb
+
+    - name: "Set zsh as default shell"
+      tags:
+        - configure
+        - install
+      become: yes
+      command: chsh -s /bin/zsh
+      changed_when: false
