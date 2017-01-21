@@ -1,4 +1,3 @@
-
 Prerequisites
 -------------
 
@@ -19,26 +18,42 @@ Configure new machines
 
 To deploy everything to a new machine run:
 
-    ansible-playbook deploy-all.yml --ask-become-pass
+    ansible-playbook deploy-all.yml -i inventory
 
-To only run parts of the deployment separate playbooks is available.
+To limit deployment to only one host or group of hosts.
 
-- `system-plays.yml`
+    ansible-playbook deploy-all.yml -i inventory -l <host/group>
 
-    This playbook contains all plays that in some way needs `sudo` privileges.
-    _Use --ask-become-pass when running this play._
+Check the `inventory` file for a list of groups and hosts or add more.
 
-- `user-plays.yml`
+### Partial deployment
+The deployment has been devided into two major plays.
 
-    This playbook contains all plays that only affect the user environment.
+- `system`
 
-Tags are also available to run specific parts.
+    This play consists of tasks that in some way needs `sudo` privileges.
+    _Use --ask-become-pass when running those plays if you haven't configured
+    passwordless sudo._
+
+- `user`
+
+    This play contains all tasks that only affect the user environment.
+
+To only run the `user` part of the deployment do this:
+
+    ansible-playbook user-plays.yml -i inventory
+
+These plays are further divided into smaller groups denoted by tags.
 
 - `install`
 
-    This tag runs all tasks that install packages or any type of software.
+    This tag is on all tasks that download and install packages.
 
 - `configure`
 
-    This tag runs only tags that do configuring of the system. Typically
+    This tag runs only tasks that do configuration of the system. Typically
     updates of .rc or .conf files, symlinking of dotfiles, etc.
+
+To run only configuring tasks for the user this will do the trick:
+
+    ansible-playbook user-plays.yml -i inventory -t configure

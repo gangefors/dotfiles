@@ -1,7 +1,6 @@
 ---
-- include: system-tasks.yml
-  tags:
-    - system
-- include: user-tasks.yml
-  tags:
-    - user
+- include: system-plays.yml
+  tags: system
+
+- include: user-plays.yml
+  tags: user

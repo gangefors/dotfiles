@@ -1,0 +1,21 @@
+---
+- hosts: all
+
+  tasks:
+    - name: "Add user to additional groups"
+      become: yes
+      tags:
+        - configure
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: "{{ item }}"
+        append: yes
+      with_items:
+        - docker
+
+    - name: "Set zsh as default shell"
+      become: yes
+      tags:
+        - configure
+      command: chsh -s /bin/zsh
+      changed_when: false

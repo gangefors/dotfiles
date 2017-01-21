@@ -1,0 +1,59 @@
+---
+- hosts: all
+
+  vars:
+    dl_dir: "{{ ansible_user_dir }}/Downloads"
+    pycharm_filename: pycharm-professional-2016.3.2.tar.gz
+
+  tasks:
+    - name: "Install Oh My Zsh"
+      tags:
+        - install
+      shell: zsh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+      register: result
+      changed_when: "'You already have Oh My Zsh installed' not in result.stdout"
+      environment:
+        SHELL: /bin/zsh
+
+    - name: "Install pip2 packages"
+      tags:
+        - install
+      pip:
+        name: "{{ item }}"
+        executable: pip2
+        extra_args: --user
+        state: latest
+      environment:
+        PATH: "{{ ansible_user_dir }}/.local/bin:/usr/bin"
+      with_items:
+        - docker-compose
+        - docker-py
+        - pip
+
+    - name: "Install pip3 packages"
+      tags:
+        - install
+      pip:
+        name: "{{ item }}"
+        executable: pip3
+        extra_args: --user
+        state: latest
+      environment:
+        PATH: "{{ ansible_user_dir }}/.local/bin:/usr/bin"
+      with_items:
+        - pip
+
+    - name: "Download PyCharm"
+      tags:
+        - install
+      get_url:
+        url: https://download.jetbrains.com/python/{{ pycharm_filename }}
+        dest: "{{ dl_dir }}/{{ pycharm_filename }}"
+
+    - name: "Unpack PyCharm"
+      tags:
+        - install
+      unarchive:
+        src: "{{dl_dir}}/{{ pycharm_filename }}"
+        dest: "{{ ansible_user_dir }}/.local/share/applications/"
+
