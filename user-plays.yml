@@ -1,5 +1,5 @@
 ---
-- hosts: localhost ansible_connection=local
+- hosts: all
 
   vars:
     pycharm_filename: pycharm-professional-2016.3.2.tar.gz
@@ -56,3 +56,11 @@
       unarchive:
         src: /tmp/{{ pycharm_filename }}
         dest: "{{ ansible_env.HOME }}/.local/share/applications/"
+
+    - name: ".gitconfig"
+      tags:
+        - configure
+      template:
+        src: .gitconfig.j2
+        dest: "{{ ansible_env.HOME }}/.gitconfig"
+        backup: yes

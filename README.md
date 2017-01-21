@@ -2,13 +2,16 @@
 Prerequisites
 -------------
 
-- Git
-
-        sudo apt-get install git
+### On the local host
 
 - Ansible
+- Git
+- Python
 
-  http://docs.ansible.com/ansible/intro_installation.html
+### On the remote host
+
+- Python
+- SSH Server
 
 
 Configure new machines
@@ -23,18 +26,19 @@ To only run parts of the deployment separate playbooks is available.
 - `system-plays.yml`
 
     This playbook contains all plays that in some way needs `sudo` privileges.
+    _Use --ask-become-pass when running this play._
 
 - `user-plays.yml`
 
-    This playbook contains all plays that only affect the users environment.
+    This playbook contains all plays that only affect the user environment.
 
 Tags are also available to run specific parts.
 
-- install
+- `install`
 
     This tag runs all tasks that install packages or any type of software.
 
-- configure
+- `configure`
 
     This tag runs only tags that do configuring of the system. Typically
-    updates of .rc or .conf files, etc.
+    updates of .rc or .conf files, symlinking of dotfiles, etc.
