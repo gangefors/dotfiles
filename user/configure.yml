@@ -2,16 +2,19 @@
 - hosts: all
 
   tasks:
-    - name: "Ensure that PATH is updated"
-      tags:
-        - configure
-      lineinfile:
+    - name: "Update .zshrc"
+      template:
+        src: .zshrc.j2
         dest: "{{ ansible_user_dir }}/.zshrc"
-        line: "export PATH={{ ansible_user_dir }}/.local/bin:$PATH"
+        backup: yes
+
+    - name: "Update .aliases"
+      template:
+        src: .aliases.j2
+        dest: "{{ ansible_user_dir }}/.aliases"
+        backup: yes
 
     - name: "Update .gitconfig"
-      tags:
-        - configure
       template:
         src: .gitconfig.j2
         dest: "{{ ansible_user_dir }}/.gitconfig"

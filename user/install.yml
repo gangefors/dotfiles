@@ -2,58 +2,77 @@
 - hosts: all
 
   vars:
-    dl_dir: "{{ ansible_user_dir }}/Downloads"
-    pycharm_filename: pycharm-professional-2016.3.2.tar.gz
+    py_versions:
+      - 2.7.13
+      - 3.6.0
+    pip_pkgs:
+      pip2:
+        - pip
+        - docker-compose
+      pip3:
+        - pip
+        - docker-compose
+    usr_dl_dir: "{{ ansible_user_dir }}/Downloads"
+    urs_gz_downloads:
+      - { url: "https://download.jetbrains.com/python/pycharm-professional-2016.3.2.tar.gz",
+          dest: "{{ usr_dl_dir }}/pycharm.tar.gz" }
 
   tasks:
-    - name: "Install Oh My Zsh"
-      tags:
-        - install
-      shell: zsh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
-      register: result
-      changed_when: "'You already have Oh My Zsh installed' not in result.stdout"
-      environment:
-        SHELL: /bin/zsh
-
-    - name: "Install pip2 packages"
-      tags:
-        - install
-      pip:
-        name: "{{ item }}"
-        executable: pip2
-        extra_args: --user
-        state: latest
-      environment:
-        PATH: "{{ ansible_user_dir }}/.local/bin:/usr/bin"
-      with_items:
-        - docker-compose
-        - docker-py
-        - pip
-
-    - name: "Install pip3 packages"
-      tags:
-        - install
-      pip:
-        name: "{{ item }}"
-        executable: pip3
-        extra_args: --user
-        state: latest
-      environment:
-        PATH: "{{ ansible_user_dir }}/.local/bin:/usr/bin"
-      with_items:
-        - pip
-
-    - name: "Download PyCharm"
-      tags:
-        - install
+    - name: "Start application downloads"
       get_url:
-        url: https://download.jetbrains.com/python/{{ pycharm_filename }}
-        dest: "{{ dl_dir }}/{{ pycharm_filename }}"
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+      async: 300
+      poll: 0
+      register: dl_job
+      with_items: "{{ urs_gz_downloads }}"
 
-    - name: "Unpack PyCharm"
-      tags:
-        - install
+    - name: "Clone Oh My Zsh"
+      git:
+        repo: https://github.com/robbyrussell/oh-my-zsh.git
+        dest: "{{ ansible_user_dir }}/.oh-my-zsh"
+        depth: 1
+
+    - name: "Clone pyenv"
+      git:
+        repo: https://github.com/yyuu/pyenv.git
+        dest: "{{ ansible_user_dir }}/.pyenv"
+        depth: 1
+
+    - name: "Clone pyenv-virtualenv"
+      git:
+        repo: https://github.com/yyuu/pyenv-virtualenv.git
+        dest: "{{ ansible_user_dir }}/.pyenv/plugins/pyenv-virtualenv"
+        depth: 1
+
+    - name: "Install Python"
+      command: "{{ ansible_user_dir }}/.pyenv/bin/pyenv install {{ item }}"
+      environment:
+        PYENV_ROOT: "{{ ansible_user_dir }}/.pyenv"
+      register: result
+      changed_when: "'Installed Python' in result.stdout"
+      failed_when: "'already exists' not in result.stderr and result.rc != 0"
+      with_items: "{{ py_versions }}"
+
+    - name: "Install pip packages"
+      pip:
+        executable: "{{ item.key }}"
+        extra_args: --user
+        name: "{{ item.value }}"
+        state: latest
+      environment:
+        PATH: "{{ ansible_user_dir }}/.local/bin:/usr/bin"
+      with_dict: "{{ pip_pkgs }}"
+
+    - name: 'Wait for downloads to complete'
+      async_status: jid={{ item.ansible_job_id }}
+      register: job_result
+      until: job_result.finished
+      retries: 300
+      with_items: "{{ dl_job.results }}"
+
+    - name: "Unpack applications"
       unarchive:
-        src: "{{dl_dir}}/{{ pycharm_filename }}"
+        src: "{{ item.dest }}"
         dest: "{{ ansible_user_dir }}/.local/share/applications/"
-
+      with_items: "{{ urs_gz_downloads }}"

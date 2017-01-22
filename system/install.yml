@@ -1,11 +1,25 @@
 ---
 - hosts: all
 
+  vars:
+    sys_dl_dir: "/tmp"
+    sys_deb_downloads:
+      - { url: "https://download.sublimetext.com/sublime-text_build-3126_amd64.deb",
+          dest: "{{ sys_dl_dir }}/sublime.deb" }
+
+
   tasks:
+    - name: "Start package downloads"
+      get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+      async: 300
+      poll: 0
+      register: dl_job
+      with_items: "{{ sys_deb_downloads }}"
+
     - name: "Install apt dependencies"
       become: yes
-      tags:
-        - install
       apt:
         state: latest
         name:
@@ -15,8 +29,6 @@
 
     - name: "Add keys for additional apt repositories"
       become: yes
-      tags:
-        - install
       apt_key:
         state: present
         url: "{{ item.url }}"
@@ -26,8 +38,6 @@
 
     - name: "Add additional apt repositories"
       become: yes
-      tags:
-        - install
       apt_repository:
         state: present
         repo: "{{ item }}"
@@ -36,32 +46,41 @@
 
     - name: "Install packages"
       become: yes
-      tags:
-        - install
       apt:
         state: latest
         name:
+          - build-essential
           - chromium
           - curl
           - docker-engine
+          - libbz2-dev
           - libcanberra-gtk-module  # PyCharm dep
+          - libncurses5-dev
+          - libncursesw5-dev
+          - libreadline-dev
+          - libsqlite3-dev
+          - libssl-dev
+          - llvm
+          - make
+          - python
           - python-pip
           - python3
           - python3-pip
           - vim
           - wget
+          - xz-utils
+          - zlib1g-dev
           - zsh
 
-    - name: "Download Sublime Text 3"
-      tags:
-        - install
-      get_url:
-        url: https://download.sublimetext.com/sublime-text_build-3126_amd64.deb
-        dest: /tmp/sublime-text-3.deb
+    - name: 'Wait for downloads to complete'
+      async_status: jid={{ item.ansible_job_id }}
+      register: job_result
+      until: job_result.finished
+      retries: 300
+      with_items: "{{ dl_job.results }}"
 
-    - name: "Install Sublime Text 3"
+    - name: "Install downloaded packages"
       become: yes
-      tags:
-        - install
       apt:
-        deb: /tmp/sublime-text-3.deb
+        deb: "{{ item.dest }}"
+      with_items: "{{ sys_deb_downloads }}"
