@@ -1,3 +1,2 @@
 ---
 email: "stefanga@axis.com"
-git_email: "{{ email }}"
