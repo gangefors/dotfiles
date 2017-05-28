@@ -1,0 +1,7 @@
+sys_dl_dir: "/tmp"
+sys_deb_downloads:
+  - url: "https://download.sublimetext.com/sublime-text_build-3126_amd64.deb"
+    dest: "{{ sys_dl_dir }}/sublime.deb"
+sys_gz_downloads:
+  - url: "https://download.jetbrains.com/python/pycharm-professional-2017.1.3.tar.gz"
+    dest: "{{ sys_dl_dir }}/pycharm.tar.gz"

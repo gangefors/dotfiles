@@ -2,6 +2,8 @@
 - hosts: all
 
   tasks:
+    - include_vars: vars.yml
+
     - name: "Update .zshrc"
       template:
         src: .zshrc.j2
@@ -18,4 +20,10 @@
       template:
         src: .gitconfig.j2
         dest: "{{ ansible_user_dir }}/.gitconfig"
+        backup: yes
+
+    - name: "Set default python versions"
+      template:
+        src: pyenv/.version.j2
+        dest: "{{ ansible_user_dir }}/.pyenv/.version"
         backup: yes

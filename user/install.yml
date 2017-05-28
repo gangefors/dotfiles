@@ -1,31 +1,8 @@
 ---
 - hosts: all
 
-  vars:
-    py_versions:
-      - 2.7.13
-      - 3.6.0
-    pip_pkgs:
-      pip2:
-        - pip
-        - docker-compose
-      pip3:
-        - pip
-        - docker-compose
-    usr_dl_dir: "{{ ansible_user_dir }}/Downloads"
-    urs_gz_downloads:
-      - { url: "https://download.jetbrains.com/python/pycharm-professional-2016.3.2.tar.gz",
-          dest: "{{ usr_dl_dir }}/pycharm.tar.gz" }
-
   tasks:
-    - name: "Start application downloads"
-      get_url:
-        url: "{{ item.url }}"
-        dest: "{{ item.dest }}"
-      async: 300
-      poll: 0
-      register: dl_job
-      with_items: "{{ urs_gz_downloads }}"
+    - include_vars: vars.yml
 
     - name: "Clone Oh My Zsh"
       git:
@@ -63,16 +40,3 @@
       environment:
         PATH: "{{ ansible_user_dir }}/.local/bin:/usr/bin"
       with_dict: "{{ pip_pkgs }}"
-
-    - name: 'Wait for downloads to complete'
-      async_status: jid={{ item.ansible_job_id }}
-      register: job_result
-      until: job_result.finished
-      retries: 300
-      with_items: "{{ dl_job.results }}"
-
-    - name: "Unpack applications"
-      unarchive:
-        src: "{{ item.dest }}"
-        dest: "{{ ansible_user_dir }}/.local/share/applications/"
-      with_items: "{{ urs_gz_downloads }}"

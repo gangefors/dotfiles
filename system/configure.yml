@@ -2,6 +2,8 @@
 - hosts: all
 
   tasks:
+    - include_vars: vars.yml
+
     - name: "Add user to additional groups"
       become: yes
       user:

@@ -1,14 +1,9 @@
 ---
 - hosts: all
 
-  vars:
-    sys_dl_dir: "/tmp"
-    sys_deb_downloads:
-      - { url: "https://download.sublimetext.com/sublime-text_build-3126_amd64.deb",
-          dest: "{{ sys_dl_dir }}/sublime.deb" }
-
-
   tasks:
+    - include_vars: vars.yml
+
     - name: "Start package downloads"
       get_url:
         url: "{{ item.url }}"
@@ -16,7 +11,9 @@
       async: 300
       poll: 0
       register: dl_job
-      with_items: "{{ sys_deb_downloads }}"
+      with_flattened:
+        - "{{ sys_deb_downloads }}"
+        - "{{ sys_gz_downloads }}"
 
     - name: "Install apt dependencies"
       become: yes
@@ -50,7 +47,6 @@
         state: latest
         name:
           - build-essential
-          - chromium
           - curl
           - docker-engine
           - libbz2-dev
@@ -84,3 +80,10 @@
       apt:
         deb: "{{ item.dest }}"
       with_items: "{{ sys_deb_downloads }}"
+
+    - name: "Unpack applications"
+      become: yes
+      unarchive:
+        src: "{{ item.dest }}"
+        dest: "/opt/"
+      with_items: "{{ sys_gz_downloads }}"
